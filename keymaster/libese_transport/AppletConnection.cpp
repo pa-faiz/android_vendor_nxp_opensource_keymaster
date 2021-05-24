@@ -35,19 +35,22 @@
  *********************************************************************************/
 #define LOG_TAG "OmapiTransport"
 
-#include <log/log.h>
-#include <iomanip>
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
-#include <vector>
+#include <log/log.h>
+#include <signal.h>
+#include <iomanip>
 #include <mutex>
+#include <vector>
 
 #include <AppletConnection.h>
 #include <EseTransportUtils.h>
+#include <SignalHandler.h>
 
 using ::android::hardware::secure_element::V1_0::SecureElementStatus;
 using ::android::hardware::secure_element::V1_0::LogicalChannelResponse;
 using android::base::StringPrintf;
+
 
 namespace se_transport {
 class SecureElementCallback : public ISecureElementHalCallback {
@@ -82,7 +85,14 @@ class SEDeathRecipient : public android::hardware::hidl_death_recipient {
 
 sp<SEDeathRecipient> mSEDeathRecipient = nullptr;
 
+AppletConnection::AppletConnection(const std::vector<uint8_t>& aid) : kAppletAID(aid) {
+}
+
 bool AppletConnection::connectToSEService() {
+    if (!SignalHandler::getInstance()->isHandlerRegistered()) {
+        LOG(INFO) << "register signal handler";
+        SignalHandler::getInstance()->installHandler(this);
+    }
     if (mSEClient != nullptr && mCallback->isClientConnected()) {
         LOG(INFO) <<"Already connected";
         return true;
@@ -103,7 +113,7 @@ bool AppletConnection::connectToSEService() {
         mSEDeathRecipient = new SEDeathRecipient();
         mSEClient->init_1_1(mCallback);
         mSEClient->linkToDeath(mSEDeathRecipient, 0/*cookie*/);
-        status = true;
+        status = mCallback->isClientConnected();
         break;
       }
       usleep(ONE_SEC);
@@ -114,7 +124,6 @@ bool AppletConnection::connectToSEService() {
 bool AppletConnection::openChannelToApplet(std::vector<uint8_t>& resp) {
     bool ret = true;
     if(mCallback == nullptr || !mCallback->isClientConnected()) {
-      // SE HAL crashed in between re-connect
       mSEClient = nullptr;
       mOpenChannel = -1;
       if(!connectToSEService()) {
@@ -123,7 +132,6 @@ bool AppletConnection::openChannelToApplet(std::vector<uint8_t>& resp) {
       }
     }
     if (isChannelOpen()) {
-        //close();
         LOG(INFO) << "channel Already opened";
         return true;
     }
@@ -139,18 +147,22 @@ bool AppletConnection::openChannelToApplet(std::vector<uint8_t>& resp) {
           });
     return ret;
 }
-
 bool AppletConnection::transmit(std::vector<uint8_t>& CommandApdu , std::vector<uint8_t>& output){
     hidl_vec<uint8_t> cmd = CommandApdu;
     cmd[0] |= mOpenChannel ;
     LOGD_OMAPI("Channel number " << ::android::hardware::toString(mOpenChannel));
 
     if (mSEClient == nullptr) return false;
+    // block any fatal signal delivery
+    SignalHandler::getInstance()->blockSignals();
 
     mSEClient->transmit(cmd, [&](hidl_vec<uint8_t> result) {
         output = result;
         LOG(INFO) << "recieved response size = " << ::android::hardware::toString(result.size()) << " data = " << result;
     });
+
+    // un-block signal delivery
+    SignalHandler::getInstance()->unblockSignals();
     return true;
 }
 
