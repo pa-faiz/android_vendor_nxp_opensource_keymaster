@@ -8,6 +8,10 @@ ifeq ($(strip $(ENABLE_SB_SPLIT_MANIFEST)),true)
 ESE_VENDOR_SB += android.hardware.keymaster@4.1-javacard.service.xml
 endif
 
+ifeq ($(strip $(ENABLE_SB_FEATURE_XML)),true)
+ESE_VENDOR_SB += android.hardware.strongbox_keystore.xml
+endif
+
 ifeq ($(strip $(TARGET_USES_ESESB)),true)
 PRODUCT_PACKAGES += $(ESE_VENDOR_SB)
 endif
