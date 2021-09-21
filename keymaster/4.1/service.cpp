@@ -1,4 +1,6 @@
 /*
+** Copyright (c) 2021, The Linux Foundation. All rights reserved.
+** Not a Contribution.
 **
 ** Copyright 2020, The Android Open Source Project
 **
@@ -37,8 +39,14 @@
 #include <android/hardware/keymaster/4.1/IKeymasterDevice.h>
 #include <hidl/HidlTransportSupport.h>
 #include <JavacardKeymaster4Device.h>
+#include "PlatformUtils.h"
 
 int main() {
+    if (!isServiceRegistrationAllowed()) {
+        LOG(ERROR) << "Javacard service registration is not allowed";
+        return 0;
+    }
+
     ::android::hardware::configureRpcThreadpool(1, true);
     auto keymaster = new ::keymaster::V4_1::javacard::JavacardKeymaster4Device();
 

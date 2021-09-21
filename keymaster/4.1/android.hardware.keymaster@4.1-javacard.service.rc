@@ -1,5 +1,5 @@
 on post-fs
-    exec u:r:vendor_init-qti-ese-strongbox-sh:s0 -- /vendor/bin/init.qti.ese.strongbox.sh
+    exec - -- /vendor/bin/init.qti.ese.strongbox.sh
 
 service vendor.ese-strongbox_4_1 /vendor/bin/hw/android.hardware.keymaster@4.1-javacard.service
     interface android.hardware.keymaster@4.0::IKeymasterDevice default
@@ -8,3 +8,6 @@ service vendor.ese-strongbox_4_1 /vendor/bin/hw/android.hardware.keymaster@4.1-j
     user system
     group system drmrpc
     disabled
+
+    # re-run the shell script in case the service restart is triggered from frameworks
+    onrestart exec_background - -- /vendor/bin/init.qti.ese.strongbox.sh service-restart

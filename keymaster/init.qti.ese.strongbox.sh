@@ -28,10 +28,15 @@
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-soc_id=`cat /sys/devices/soc0/soc_id` 2> /dev/null
+platform=`getprop ro.boot.product.vendor.sku` 2> /dev/null
+action=$1
 
-#soc_id's Fillmore:506
-if [ "$soc_id" -eq 506 ]; then
+#Stop service with sku as taro
+if [ "$action" = "service-restart" ]; then
+    if [ "$platform" = "taro" ]; then
+        stop vendor.ese-strongbox_4_1
+    fi
+elif [ "$platform" != "taro" ]; then
     enable vendor.ese-strongbox_4_1
     start vendor.ese-strongbox_4_1
 fi
