@@ -45,7 +45,8 @@ bool isServiceRegistrationAllowed() {
         return false;
     }
 
-    if (strcmp(platform, RESTRICTED_PLATFORM) == 0)
+    if ((strcmp(platform, RESTRICTED_PLATFORM_TARO) == 0) ||
+        (strcmp(platform, RESTRICTED_PLATFORM_CAPE) == 0))
         return false;
 
     return true;
