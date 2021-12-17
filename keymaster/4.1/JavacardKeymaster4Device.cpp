@@ -1064,17 +1064,37 @@ ErrorCode JavacardKeymaster4Device::handleBeginPrivateKeyOperation(
     if(getTag(inParams, Tag::APPLICATION_DATA, param)) {
         applicationData = param.blob;
     }
+#ifdef NXP_EXTNS
+    if (_gCachedkeyChar.key == keyBlob) {
+        if (_gCachedkeyChar.value.appId == applicationId &&
+            _gCachedkeyChar.value.appData == applicationData) {
+            keyCharacteristics = _gCachedkeyChar.value.keychar;
+            errorCode = ErrorCode::OK;
+            LOGD_JC("Using cached keycharacteristices");
+        } else {
+            LOGD_JC("cached keychar not valid !");
+            errorCode = ErrorCode::UNKNOWN_ERROR;
+        }
+    }
+#endif
     //Call to getKeyCharacteristics.
-    LOGD_JC("get Key Characteristic");
-    getKeyCharacteristics(keyBlob, applicationId, applicationData,
-                          [&](ErrorCode error, KeyCharacteristics keyChars) {
-                              errorCode = error;
-                              keyCharacteristics = keyChars;
-                          });
-    LOG(DEBUG)
-            << "INS_BEGIN_OPERATION_CMD StrongboxKM getKeyCharacteristics status: "
-            << (int32_t)errorCode;
-
+    if (errorCode != ErrorCode::OK) {
+        getKeyCharacteristics(keyBlob, applicationId, applicationData,
+                              [&](ErrorCode error, KeyCharacteristics keyChars) {
+                                  errorCode = error;
+                                  keyCharacteristics = keyChars;
+                              });
+        LOGD_JC("INS_BEGIN_OPERATION_CMD StrongboxKM getKeyCharacteristics status: "
+                << (int32_t)errorCode);
+#ifdef NXP_EXTNS
+        if (errorCode == ErrorCode::OK) {
+            _gCachedkeyChar.key = keyBlob;
+            _gCachedkeyChar.value.keychar = keyCharacteristics;
+            _gCachedkeyChar.value.appId = applicationId;
+            _gCachedkeyChar.value.appData = applicationData;
+        }
+#endif
+    }
     if(errorCode == ErrorCode::OK) {
         errorCode = ErrorCode::UNKNOWN_ERROR;
         if (getTag(keyCharacteristics.hardwareEnforced, Tag::ALGORITHM, param)) {
@@ -1105,11 +1125,17 @@ ErrorCode JavacardKeymaster4Device::handleBeginPrivateKeyOperation(
         } else {
             LOG(ERROR) << "INS_BEGIN_OPERATION_CMD couldn't find algorithm tag: "
                        << (int32_t)Tag::ALGORITHM;
+#ifdef NXP_EXTNS
+            _gCachedkeyChar.key = 0;  // reset the cache
+#endif
         }
     } else {
         LOG(ERROR)
                 << "INS_BEGIN_OPERATION_CMD error in getKeyCharacteristics status: "
                 << (int32_t)errorCode;
+#ifdef NXP_EXTNS
+        _gCachedkeyChar.key = 0;  // reset the cache
+#endif
     }
     return errorCode;
 }
