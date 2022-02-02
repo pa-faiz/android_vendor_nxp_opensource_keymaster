@@ -71,6 +71,7 @@ template <typename T, class... Args> std::shared_ptr<T> addService(Args&&... arg
 }
 
 int main() {
+    LOG(INFO) << "Starting javacard strongbox service";
     ABinderProcess_setThreadPoolMaxThreadCount(0);
     // Javacard Secure Element
 #if defined OMAPI_TRANSPORT
@@ -93,6 +94,7 @@ int main() {
     // Add Remotely Provisioned Component Service
     addService<JavacardRemotelyProvisionedComponentDevice>(card);
 
+    LOG(INFO) << "Joining thread pool";
     ABinderProcess_joinThreadPool();
     return EXIT_FAILURE;  // should not reach
 }

@@ -14,6 +14,25 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  */
+/******************************************************************************
+ **
+ ** The original Work has been changed by NXP.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+ ** You may obtain a copy of the License at
+ **
+ ** http://www.apache.org/licenses/LICENSE-2.0
+ **
+ ** Unless required by applicable law or agreed to in writing, software
+ ** distributed under the License is distributed on an "AS IS" BASIS,
+ ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ** See the License for the specific language governing permissions and
+ ** limitations under the License.
+ **
+ ** Copyright 2022 NXP
+ **
+ *********************************************************************************/
 #if defined OMAPI_TRANSPORT
 #pragma once
 
@@ -34,6 +53,8 @@
 #include <memory>
 #include <vector>
 
+#include <SBAccessController.h>
+
 namespace keymint::javacard {
 using std::shared_ptr;
 using std::vector;
@@ -45,8 +66,9 @@ using std::vector;
 class OmapiTransport : public ITransport {
 
 public:
-    OmapiTransport(const std::vector<uint8_t>& mAppletAID)
-                : ITransport(mAppletAID), mSelectableAid(mAppletAID) {}
+  OmapiTransport(const std::vector<uint8_t> &mAppletAID)
+      : ITransport(mAppletAID), mSelectableAid(mAppletAID) {
+  }
 
     /**
      * Gets the binder instance of ISEService, gets the reader corresponding to secure element, establishes a session
@@ -66,12 +88,16 @@ public:
      * broken.
      */
     bool isConnected() override;
+    void closeSession();
 private:
     //AppletConnection mAppletConnection;
+    SBAccessController mSBAccessController;
     IntervalTimer mTimer;
     std::vector<uint8_t> mSelectableAid;
     std::shared_ptr<aidl::android::se::omapi::ISecureElementService> omapiSeService = nullptr;
     std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> eSEReader = nullptr;
+    std::shared_ptr<aidl::android::se::omapi::ISecureElementSession> session = nullptr;
+    std::shared_ptr<aidl::android::se::omapi::ISecureElementChannel> channel = nullptr;
     std::map<std::string, std::shared_ptr<aidl::android::se::omapi::ISecureElementReader>>
             mVSReaders = {};
     std::string const ESE_READER_PREFIX = "eSE";
@@ -82,7 +108,10 @@ private:
     bool internalTransmitApdu(
             std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
             std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse);
-
+    bool internalProtectedTransmitApdu(
+            std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
+            std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse);
+    void prepareErrorRepsponse(std::vector<uint8_t>& resp);
 };
 }  // namespace keymint::javacard
 #endif
