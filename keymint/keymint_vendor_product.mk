@@ -1,5 +1,6 @@
 # Build Keymaster open source vendor modules
 ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox
+ESE_VENDOR_KEYMINT += hal_uuid_map_config.xml
 
 ifeq ($(strip $(ENABLE_ESE_KEYMINT_SPLIT_MANIFEST)),true)
 ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox.xml
