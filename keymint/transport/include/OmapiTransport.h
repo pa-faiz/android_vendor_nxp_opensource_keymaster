@@ -68,6 +68,10 @@ class OmapiTransport : public ITransport {
 public:
   OmapiTransport(const std::vector<uint8_t> &mAppletAID)
       : ITransport(mAppletAID), mSelectableAid(mAppletAID) {
+#ifdef NXP_EXTNS
+    mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
+        AIBinder_DeathRecipient_new(BinderDiedCallback));
+#endif
   }
 
     /**
@@ -108,10 +112,24 @@ private:
     bool internalTransmitApdu(
             std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
             std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse);
+
+#ifdef NXP_EXTNS
+    ::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
+
+    static void BinderDiedCallback(void *cookie);
     bool internalProtectedTransmitApdu(
             std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
             std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse);
     void prepareErrorRepsponse(std::vector<uint8_t>& resp);
+#endif
+#ifdef INTERVAL_TIMER
+    inline uint16_t getApduStatus(std::vector<uint8_t> &inputData) {
+      // Last two bytes are the status SW0SW1
+      uint8_t SW0 = inputData.at(inputData.size() - 2);
+      uint8_t SW1 = inputData.at(inputData.size() - 1);
+      return (SW0 << 8 | SW1);
+    }
+#endif
 };
 }  // namespace keymint::javacard
 #endif
