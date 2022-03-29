@@ -104,7 +104,7 @@ bool AppletConnection::connectToSEService() {
       mSEClient = ISecureElement::tryGetService("eSE1");
 
       if(mSEClient == nullptr){
-        LOG(ERROR) << "failed to get eSE HAL service : retry after 1 sec , retry cnt = " << android::hardware::toString(retry) ;
+        LOG(ERROR) << "failed to get eSE HAL service : retry after 50 m-sec , retry cnt = " << android::hardware::toString(retry) ;
       }else {
         LOG(INFO) << " !!! SuccessFully got Handle to eSE HAL service" ;
         if (mCallback == nullptr) {
@@ -116,7 +116,7 @@ bool AppletConnection::connectToSEService() {
         status = mCallback->isClientConnected();
         break;
       }
-      usleep(ONE_SEC);
+      usleep(FIFTY_MILLISEC);
     }
     return status;
 }
