@@ -107,10 +107,6 @@ cc_binary {
         "libkeymaster_portable",
         "libcrypto",
         "libese_transport"
-    ],
-
-    required: [
-       "android.hardware.strongbox_keystore.xml",
     ]
 }
 //prebuilt_etc {

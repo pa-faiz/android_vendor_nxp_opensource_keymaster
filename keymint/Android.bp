@@ -161,4 +161,8 @@ prebuilt_etc {
     src: "android.hardware.strongbox_keystore.xml",
 }
 
-
+prebuilt_etc {
+    name: "hal_uuid_map_config.xml",
+    vendor: true,
+    src: "transport/res/hal_uuid_map_config.xml",
+}
