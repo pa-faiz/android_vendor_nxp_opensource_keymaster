@@ -11,7 +11,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2021 NXP
+ ** Copyright 2020-2022 NXP
  **
  */
 #ifndef __ESE_TRANSPORT_CONFIG__
@@ -25,6 +25,7 @@ namespace se_transport {
 #define SESSION_TIMEOUT 3*1000 // 3 secs
 #define LOGICAL_CH_NOT_SUPPORTED_SW1 0x68
 #define LOGICAL_CH_NOT_SUPPORTED_SW2 0x81
+#define APDU_INS_OFFSET 1      // INS offset in command APDU
 // Helper method to dump vector contents
 static bool debug_omapi = true;
 #define LOGD_OMAPI(x) \

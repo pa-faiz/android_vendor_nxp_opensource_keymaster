@@ -30,7 +30,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2021 NXP
+ ** Copyright 2020-2022 NXP
  **
  *********************************************************************************/
 #define LOG_TAG "OmapiTransport"
@@ -51,8 +51,9 @@ using ::android::hardware::secure_element::V1_0::SecureElementStatus;
 using ::android::hardware::secure_element::V1_0::LogicalChannelResponse;
 using android::base::StringPrintf;
 
-
 namespace se_transport {
+static bool g_IsCryptoOperationRunning = false;
+
 class SecureElementCallback : public ISecureElementHalCallback {
  public:
     Return<void> onStateChange(bool state) override {
@@ -85,7 +86,25 @@ class SEDeathRecipient : public android::hardware::hidl_death_recipient {
 
 sp<SEDeathRecipient> mSEDeathRecipient = nullptr;
 
+static void CryptoOpTimerFunc(union sigval arg) {
+    (void)arg;  // unused
+    LOG(DEBUG) << "CryptoOperation timer expired";
+    g_IsCryptoOperationRunning = false;
+}
+
 AppletConnection::AppletConnection(const std::vector<uint8_t>& aid) : kAppletAID(aid) {
+}
+
+void AppletConnection::startTimer(bool isStart, IntervalTimer& t, int timeout,
+                                    void (*timerFunc)(union sigval)) {
+    t.kill();
+    if (isStart) {
+        t.set(timeout, this, timerFunc);
+    }
+}
+
+int AppletConnection::getSessionTimeout() {
+    return g_IsCryptoOperationRunning ? CRYPTO_OP_SESSION_TIMEOUT : REGULAR_SESSION_TIMEOUT;
 }
 
 bool AppletConnection::connectToSEService() {
@@ -153,9 +172,17 @@ bool AppletConnection::transmit(std::vector<uint8_t>& CommandApdu , std::vector<
     LOGD_OMAPI("Channel number " << ::android::hardware::toString(mOpenChannel));
 
     if (mSEClient == nullptr) return false;
+
+    if (cmd[APDU_INS_OFFSET] == BEGIN_OPERATION_CMD || cmd[APDU_INS_OFFSET] == UPDATE_OPERATION_CMD) {
+        g_IsCryptoOperationRunning = true;
+        startTimer(true, mTimerCrypto, CRYPTO_OP_SESSION_TIMEOUT, CryptoOpTimerFunc);
+    } else if (cmd[APDU_INS_OFFSET] == FINISH_OPERATION_CMD || cmd[APDU_INS_OFFSET] == ABORT_OPERATION_CMD) {
+        g_IsCryptoOperationRunning = false;
+        startTimer(false, mTimerCrypto, 0, nullptr);
+    }
+
     // block any fatal signal delivery
     SignalHandler::getInstance()->blockSignals();
-
     mSEClient->transmit(cmd, [&](hidl_vec<uint8_t> result) {
         output = result;
         LOG(INFO) << "recieved response size = " << ::android::hardware::toString(result.size()) << " data = " << result;
