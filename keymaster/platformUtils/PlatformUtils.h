@@ -33,8 +33,9 @@
 #include <cutils/properties.h>
 #include <android-base/logging.h>
 
-#define PROPERTY_LENGTH_MAX    10
-#define RESTRICTED_PLATFORM    "taro"
+#define PROPERTY_LENGTH_MAX         10
+#define RESTRICTED_PLATFORM_TARO    "taro"
+#define RESTRICTED_PLATFORM_CAPE    "cape"
 
 /**@brief:  Checks if eSE-strongbox HAL service registration to be
  *          allowed on the platform.

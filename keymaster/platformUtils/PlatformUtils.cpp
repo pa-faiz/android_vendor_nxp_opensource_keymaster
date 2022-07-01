@@ -42,10 +42,12 @@ bool isServiceRegistrationAllowed() {
     ret = __system_property_get("ro.boot.product.vendor.sku", platform);
     if (ret <= 0) {
         LOG(ERROR) << "Failure in identifying platform";
-        return false;
+        /* TODO: This is a temporary fix: proper fix will be provided at the time of BU */
+        //return false;
     }
 
-    if (strcmp(platform, RESTRICTED_PLATFORM) == 0)
+    if ((strcmp(platform, RESTRICTED_PLATFORM_TARO) == 0) ||
+        (strcmp(platform, RESTRICTED_PLATFORM_CAPE) == 0))
         return false;
 
     return true;

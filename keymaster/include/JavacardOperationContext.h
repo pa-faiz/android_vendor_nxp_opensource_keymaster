@@ -14,6 +14,25 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  */
+/******************************************************************************
+ *
+ *  The original Work has been changed by NXP.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *  Copyright 2022 NXP
+ *
+ **********************************************************************************/
 
 #ifndef KEYMASTER_V4_1_JAVACARD_OPERATIONCONTEXT_H_
 #define KEYMASTER_V4_1_JAVACARD_OPERATIONCONTEXT_H_
@@ -49,7 +68,7 @@ enum class Operation;
  */
 struct BufferedData {
     uint8_t buf[MAX_BUF_SIZE];
-    size_t buf_len;
+    uint32_t buf_len;
 };
 
 /**
@@ -61,6 +80,7 @@ struct OperationInfo {
     Digest digest;
     PaddingMode pad;
     BlockMode mode;
+    uint32_t macLength;
 };
 
 /**
@@ -91,7 +111,11 @@ struct OperationData {
 class OperationContext {
 
 public:
+#ifdef NXP_EXTNS
+    OperationContext();
+#else
     OperationContext(){}
+#endif
     ~OperationContext() {}
     /**
      * In Begin operation caller has to call this function to store the operation data corresponding to the operation
@@ -121,6 +145,11 @@ private:
      */
     std::map<uint64_t, OperationData> operationTable;
 
+    /**
+     * Flag to indicate if current system image version is at least Android 13
+     */
+    bool isAtLeastAndroidT;
+
     /* Helper functions */
 
     /**
@@ -136,14 +165,14 @@ private:
      * reamining data for update calls only. For finish calls it extracts all the buffered data combines it with
      * input data.
      */
-    ErrorCode getBlockAlignedData(uint64_t operHandle, uint8_t* input, size_t input_len, Operation opr, std::vector<uint8_t>&
-            out);
+    ErrorCode bufferData(uint64_t operHandle, std::vector<uint8_t>& input,
+        Operation opr, std::vector<uint8_t>& out);
     /**
      * This function sends the data back to the caller using callback functions. It does some processing on input data
      * for Asymmetic operations.
      */
-    ErrorCode handleInternalUpdate(uint64_t operHandle, uint8_t* data, size_t len, Operation opr,
-        sendDataToSE_cb cb, bool finish=false);
+    ErrorCode handleInternalUpdate(uint64_t operHandle, std::vector<uint8_t>& data, Operation opr,
+        sendDataToSE_cb cb, bool finish = false);
 
 };
 

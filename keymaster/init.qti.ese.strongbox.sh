@@ -31,12 +31,12 @@
 platform=`getprop ro.boot.product.vendor.sku` 2> /dev/null
 action=$1
 
-#Stop service with sku as taro
+#Stop service with sku as taro or cape
 if [ "$action" = "service-restart" ]; then
-    if [ "$platform" = "taro" ]; then
+    if [ "$platform" = "taro" ] || [ "$platform" = "cape" ]; then
         stop vendor.ese-strongbox_4_1
     fi
-elif [ "$platform" != "taro" ]; then
+elif [ "$platform" != "taro" ] && [ "$platform" != "cape" ]; then
     enable vendor.ese-strongbox_4_1
     start vendor.ese-strongbox_4_1
 fi
