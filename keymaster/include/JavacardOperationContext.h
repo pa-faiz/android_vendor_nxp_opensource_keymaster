@@ -81,6 +81,7 @@ struct OperationInfo {
     PaddingMode pad;
     BlockMode mode;
     uint32_t macLength;
+    bool inputProcessed;
 };
 
 /**
@@ -122,6 +123,10 @@ public:
      * handle.
      */
     ErrorCode setOperationInfo(uint64_t operationHandle, KeyPurpose purpose, Algorithm alg, const hidl_vec<KeyParameter>& params);
+    /**
+     * Get OperationInfo corresponding to the operation handle
+     */
+    OperationInfo getOperationInfo(uint64_t operationHandle);
     /**
      * This function clears the operation data from the map. Caller has to call this function once the operation is done
      * or if there is any error while processing the operation.
