@@ -30,7 +30,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2021 NXP
+ ** Copyright 2020-2022 NXP
  **
  *********************************************************************************/
 #define LOG_TAG "OmapiTransport"
@@ -81,8 +81,9 @@ bool OmapiTransport::sendData(const uint8_t* inData, const size_t inLen, std::ve
         return mAppletConnection.close();
     }
 #ifdef INTERVAL_TIMER
-     LOGD_OMAPI("Set the timer");
-     mTimer.set(SESSION_TIMEOUT,this, SessionTimerFunc);
+     int timeout = mAppletConnection.getSessionTimeout();
+     LOGD_OMAPI("Set the timer with timeout " << timeout << " ms");
+     mTimer.set(timeout, this, SessionTimerFunc);
 #endif
     return status;
 }

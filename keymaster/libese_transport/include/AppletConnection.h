@@ -30,7 +30,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2021 NXP
+ ** Copyright 2020-2022 NXP
  **
  *********************************************************************************/
 #ifndef __APPLETCONNECTION_H__
@@ -42,6 +42,15 @@
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
 #include <vector>
+
+#include <IntervalTimer.h>
+#define BEGIN_OPERATION_CMD (0x30)   // begin()
+#define UPDATE_OPERATION_CMD (0x30)  // update()
+#define FINISH_OPERATION_CMD (0x32)  // finish()
+#define ABORT_OPERATION_CMD (0x33)   // abort()
+
+#define REGULAR_SESSION_TIMEOUT (3 * 1000)     // 3 secs,default value
+#define CRYPTO_OP_SESSION_TIMEOUT (20 * 1000)  // 20 secs,for crypto operation
 
 namespace se_transport {
 
@@ -86,11 +95,25 @@ public:
    */
   bool isChannelOpen();
 
+  /**
+     * Provides session timeout value for Logical channel mgmt
+     * 1) CRYPTO_OP_SESSION_TIMEOUT for crypto begin()
+     * 2) REGULAR_SESSION_TIMEOUT for all other operations
+     * Params : void
+     * Returns : Session timeout value in ms
+     */
+    int getSessionTimeout();
+
+
 private:
     std::mutex channel_mutex_; // exclusive access to isChannelopen()/close()
     sp<ISecureElement> mSEClient;
     std::vector<uint8_t> kAppletAID;
+    IntervalTimer mTimerCrypto;  // track crypto operations
     int8_t mOpenChannel = -1;
+
+    void startTimer(bool isStart, IntervalTimer& t, int timeout,
+                    void (*timerFunc)(union sigval arg));
 };
 
 }  // namespace se_transport
