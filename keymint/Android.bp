@@ -123,6 +123,7 @@ cc_binary {
     vintf_fragments: [
         "android.hardware.security.keymint-service.strongbox.xml",
         "android.hardware.security.sharedsecret-service.strongbox.xml",
+        "secure_element-service.xml",
     ],
     vendor: true,
     cflags: [
