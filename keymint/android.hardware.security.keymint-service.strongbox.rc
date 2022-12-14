@@ -1,3 +1,14 @@
+# Changes from Qualcomm Innovation Center are provided under the following license:
+#
+# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
 service vendor.keymint-strongbox /vendor/bin/hw/android.hardware.security.keymint-service.strongbox
     class early_hal
     user vendor_nxp_strongbox
+    group vendor_nxp_strongbox drmrpc
+    disabled
+
+on property:vendor.ese.strongbox=1
+    enable vendor.keymint-strongbox
+    start vendor.keymint-strongbox

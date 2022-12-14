@@ -1,0 +1,13 @@
+sh_binary {
+    name: "init.qti.ese.strongbox.sh",
+    src: "init.qti.ese.strongbox.sh",
+    vendor: true,
+    owner: "qti",
+}
+
+prebuilt_etc {
+    name: "vendor.qti.security.ese.strongbox.platformutils-service.rc",
+    src: "vendor.qti.security.ese.strongbox.platformutils-service.rc",
+    relative_install_path: "init",
+    vendor: true,
+}

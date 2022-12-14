@@ -1,5 +1,7 @@
 # Build Keymaster open source vendor modules
 ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox
+ESE_VENDOR_KEYMINT += init.qti.ese.strongbox.sh
+ESE_VENDOR_KEYMINT += vendor.qti.security.ese.strongbox.platformutils-service.rc
 
 ifeq ($(strip $(ENABLE_ESE_KEYMINT_SPLIT_MANIFEST)),true)
 ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox.xml

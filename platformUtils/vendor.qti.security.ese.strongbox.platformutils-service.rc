@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+service vendor.platformutils /vendor/bin/sh /vendor/bin/init.qti.ese.strongbox.sh
+    class early_hal
+    user vendor_nxp_strongbox
+    group vendor_nxp_strongbox
+    disabled
+    oneshot
+
+on property:sys.boot_completed=1
+    start vendor.platformutils
