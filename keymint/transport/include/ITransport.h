@@ -30,7 +30,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2021 NXP
+ ** Copyright 2021-2022 NXP
  **
  *********************************************************************************/
 #pragma once
@@ -49,7 +49,8 @@ class ITransport {
   public:
     virtual ~ITransport() {}
 
-    ITransport(__attribute__((unused)) const std::vector<uint8_t>& mAppletAID) {};
+    explicit ITransport(__attribute__((unused))
+                        const std::vector<uint8_t> &mAppletAID){};
 
     /**
      * Opens connection.

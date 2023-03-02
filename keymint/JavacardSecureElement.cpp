@@ -16,18 +16,22 @@
 
 #define LOG_TAG "javacard.keymint.device.strongbox-impl"
 #include "JavacardSecureElement.h"
-#include "keymint_utils.h"
 
 #include <algorithm>
-#include <android-base/logging.h>
-#include <android-base/properties.h>
 #include <iostream>
 #include <iterator>
-#include <keymaster/android_keymaster_messages.h>
 #include <memory>
 #include <regex.h>
 #include <string>
 #include <vector>
+
+#include <keymaster/android_keymaster_messages.h>
+#include <android-base/logging.h>
+#include <android-base/properties.h>
+
+#include "keymint_utils.h"
+
+
 
 namespace keymint::javacard {
 
@@ -37,8 +41,23 @@ keymaster_error_t JavacardSecureElement::initializeJavacard() {
     request.add(Uint(getOsVersion()));
     request.add(Uint(getOsPatchlevel()));
     request.add(Uint(getVendorPatchlevel()));
-    auto [item, err] = sendRequest(Instruction::INS_SET_BOOT_PARAMS_CMD, request);
+    auto [item, err] = sendRequest(Instruction::INS_INIT_STRONGBOX_CMD, request);
     return err;
+}
+
+keymaster_error_t JavacardSecureElement::sendEarlyBootEndedEvent(bool eventTriggered) {
+    isEarlyBootEventPending |= eventTriggered;
+    if (!isEarlyBootEventPending) {
+        return KM_ERROR_OK;
+    }
+    auto [item, err] = sendRequest(Instruction::INS_EARLY_BOOT_ENDED_CMD);
+    if (err != KM_ERROR_OK) {
+        // Incase of failure cache the event and send in the next immediate request to Applet.
+        isEarlyBootEventPending = true;
+        return err;
+    }
+    isEarlyBootEventPending = false;
+    return KM_ERROR_OK;
 }
 
 keymaster_error_t JavacardSecureElement::constructApduMessage(Instruction& ins,

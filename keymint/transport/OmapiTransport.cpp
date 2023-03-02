@@ -30,11 +30,13 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2022 NXP
+ ** Copyright 2022-2023 NXP
  **
  *********************************************************************************/
 #define LOG_TAG "OmapiTransport"
 #if defined OMAPI_TRANSPORT
+#include "OmapiTransport.h"
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -46,15 +48,22 @@
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 
-#include "OmapiTransport.h"
-
 #include <EseTransportUtils.h>
 #include <IntervalTimer.h>
 
 #define UNUSED_V(a) a=a
 #define RESP_CHANNEL_NOT_AVAILABLE 0x6881
+#ifdef NXP_EXTNS
+#define DEFAULT_SESSION_TIMEOUT_MSEC 1000
+#endif
+
+using android::base::StringPrintf;
 
 namespace keymint::javacard {
+
+std::string const ESE_READER_PREFIX = "eSE";
+constexpr const char omapiServiceName[] =
+        "android.se.omapi.ISecureElementService/default";
 
 class SEListener : public ::aidl::android::se::omapi::BnSecureElementListener {};
 
@@ -63,7 +72,7 @@ void omapiSessionTimerFunc(union sigval arg){
      LOG(INFO) << "Session Timer expired !!";
      OmapiTransport *obj = (OmapiTransport*)arg.sival_ptr;
      if(obj != nullptr)
-       obj->closeSession();
+       obj->closeChannel();
 }
 
 void OmapiTransport::BinderDiedCallback(void *cookie) {
@@ -74,7 +83,6 @@ void OmapiTransport::BinderDiedCallback(void *cookie) {
 #endif
 
 bool OmapiTransport::initialize() {
-    std::vector<std::string> readers = {};
 
     LOG(DEBUG) << "Initialize the secure element connection";
 
@@ -102,6 +110,7 @@ bool OmapiTransport::initialize() {
         closeConnection();
     }
 
+    std::vector<std::string> readers = {};
     // Get available readers
     auto status = omapiSeService->getReaders(&readers);
     if (!status.isOk()) {
@@ -152,12 +161,7 @@ bool OmapiTransport::initialize() {
 bool OmapiTransport::internalTransmitApdu(
         std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
         std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse) {
-    //auto mSEListener = std::make_shared<SEListener>();
     auto mSEListener = ndk::SharedRefBase::make<SEListener>();
-    std::vector<uint8_t> selectResponse = {};
-    /*std::vector<uint8_t> SELECTABLE_AID = {0xA0, 0x00, 0x00, 0x04, 0x76, 0x41, 0x6E, 0x64,
-        0x72, 0x6F, 0x69, 0x64, 0x43, 0x54, 0x53, 0x31};*/
-
 
     LOG(DEBUG) << "internalTransmitApdu: trasmitting data to secure element";
 
@@ -197,13 +201,18 @@ bool OmapiTransport::internalTransmitApdu(
         return false;
     }
 
+    std::vector<uint8_t> selectResponse = {};
     res = channel->getSelectResponse(&selectResponse);
     if (!res.isOk()) {
         LOG(ERROR) << "getSelectResponse error: " << res.getMessage();
         return false;
     }
-    if (selectResponse.size() < 2) {
-        LOG(ERROR) << "getSelectResponse size error";
+
+    if ((selectResponse.size() < 2)
+        || ((selectResponse[selectResponse.size() -1] & 0xFF) != 0x00)
+        || ((selectResponse[selectResponse.size() -2] & 0xFF) != 0x90))
+    {
+        LOG(ERROR) << "Failed to select the Applet.";
         return false;
     }
 
@@ -299,11 +308,17 @@ bool OmapiTransport::isConnected() {
 }
 
 #ifdef NXP_EXTNS
+
+void OmapiTransport::setDefaultTimeout(int timeout) {
+    if (mTimeout != timeout) {
+        mTimeout = timeout;
+    }
+}
+
 bool OmapiTransport::internalProtectedTransmitApdu(
         std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
         std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse) {
     //auto mSEListener = std::make_shared<SEListener>();
-    auto mSEListener = ndk::SharedRefBase::make<SEListener>();
     std::vector<uint8_t> selectResponse = {};
 
     if (reader == nullptr) {
@@ -335,55 +350,69 @@ bool OmapiTransport::internalProtectedTransmitApdu(
     }
 
     if ((channel == nullptr || (channel->isClosed(&status).isOk() && status))) {
-        if (!mSBAccessController.isSelectAllowed()) {
-            LOG(ERROR) << "Select not allowed";
-            prepareErrorRepsponse(transmitResponse);
-            return false;
-        }
-
-        res = session->openLogicalChannel(mSelectableAid, 0x00, mSEListener, &channel);
-        if (!res.isOk()) {
-            LOG(ERROR) << "openLogicalChannel error: " << res.getMessage();
-            return false;
-        }
-        if (channel == nullptr) {
-            LOG(ERROR) << "Could not open channel null";
-            return false;
-        }
-
-        res = channel->getSelectResponse(&selectResponse);
-        if (!res.isOk()) {
-            LOG(ERROR) << "getSelectResponse error: " << res.getMessage();
-            return false;
-        }
-        if (selectResponse.size() < 2) {
-            LOG(ERROR) << "getSelectResponse size error";
-            return false;
-        }
-        mSBAccessController.parseResponse(selectResponse);
-    }
-
-    if (!mSBAccessController.isOperationAllowed(apdu[APDU_INS_OFFSET])) {
-        LOG(ERROR) << "command Ins:" << apdu[APDU_INS_OFFSET] << " not allowed";
+      if (!mSBAccessController.isOperationAllowed(apdu[APDU_INS_OFFSET])) {
+        LOG(ERROR) << "Select / Command INS not allowed";
         prepareErrorRepsponse(transmitResponse);
         return false;
+      }
+
+      if (!openChannelToApplet()) {
+        LOG(ERROR) << "openLogicalChannel error: " << res.getMessage();
+        return false;
+      }
+      if (channel == nullptr) {
+        LOG(ERROR) << "Could not open channel null";
+        return false;
+      }
+
+      res = channel->getSelectResponse(&selectResponse);
+      if (!res.isOk()) {
+        LOG(ERROR) << "getSelectResponse error: " << res.getMessage();
+        return false;
+      }
+      if ((selectResponse.size() < 2)
+          || ((selectResponse[selectResponse.size() -1] & 0xFF) != 0x00)
+          || ((selectResponse[selectResponse.size() -2] & 0xFF) != 0x90))
+      {
+          LOG(ERROR) << "Failed to select the Applet.";
+          return false;
+      }
+      mSBAccessController.parseResponse(selectResponse);
     }
 
-    res = channel->transmit(apdu, &transmitResponse);
+    status = false;
+    if (mSBAccessController.isOperationAllowed(apdu[APDU_INS_OFFSET])) {
+        LOGD_OMAPI("constructed apdu: " << apdu);
+        res = channel->transmit(apdu, &transmitResponse);
+        status = true;
+    } else {
+        LOG(ERROR) << "command Ins:" << apdu[APDU_INS_OFFSET] << " not allowed";
+        prepareErrorRepsponse(transmitResponse);
+    }
 
 #ifdef INTERVAL_TIMER
-    int timeout = mSBAccessController.getSessionTimeout();
+    int timeout = 0x00;
+    if (mTimeout) {
+        timeout = mTimeout;
+    } else {
+        timeout = ((kWeaverAID == mSelectableAid)
+                       ? DEFAULT_SESSION_TIMEOUT_MSEC
+                       : mSBAccessController.getSessionTimeout());
+    }
+
     if (timeout == 0 || !res.isOk() ||
         ((transmitResponse.size() >= 2) &&
          (getApduStatus(transmitResponse) == RESP_CHANNEL_NOT_AVAILABLE))) {
-      closeSession(); // close immediately
+      closeChannel(); // close immediately
     } else {
       LOGD_OMAPI("Set the timer with timeout " << timeout << " ms");
-      mTimer.set(mSBAccessController.getSessionTimeout(), this,
-                 omapiSessionTimerFunc);
+      if (!mTimer.set(timeout, this, omapiSessionTimerFunc)) {
+        LOG(ERROR) << "Set Timer Failed !!!";
+        closeChannel();
+      }
     }
 #else
-     closeSession();
+    closeChannel();
 #endif
 
     LOGD_OMAPI("STATUS OF TRNSMIT: " << res.getExceptionCode() << " Message: "
@@ -392,7 +421,7 @@ bool OmapiTransport::internalProtectedTransmitApdu(
         LOG(ERROR) << "transmit error: " << res.getMessage();
         return false;
     }
-    return true;
+    return status;
 }
 
 void OmapiTransport::prepareErrorRepsponse(std::vector<uint8_t>& resp){
@@ -401,10 +430,36 @@ void OmapiTransport::prepareErrorRepsponse(std::vector<uint8_t>& resp){
         resp.push_back(0xFF);
 }
 
-void OmapiTransport::closeSession() {
-    if (channel != nullptr) channel->close();
-    if (session != nullptr) session->close();
+void OmapiTransport::closeChannel() {
+  if (channel != nullptr)
+    channel->close();
+    LOGD_OMAPI("Channel closed");
 }
+
+bool OmapiTransport::openChannelToApplet() {
+  auto mSEListener = ndk::SharedRefBase::make<SEListener>();
+  const std::vector<uint8_t> sbAppletAID = {0xA0, 0x00, 0x00, 0x00, 0x62};
+  uint8_t retry = 0;
+  do {
+    auto res = session->openLogicalChannel(mSelectableAid, 0x00, mSEListener,
+                                           &channel);
+
+    if ((mSelectableAid == sbAppletAID) &&
+        (!res.isOk() || (channel == nullptr))) {
+      res = session->openLogicalChannel(mSelectableAid, 0x02, mSEListener,
+                                        &channel);
+      if (!res.isOk() || (channel == nullptr)) {
+        LOG(INFO) << " retry openLogicalChannel after 2 secs";
+        usleep(2 * ONE_SEC);
+        continue;
+      }
+    }
+    return res.isOk();
+  } while (++retry < MAX_RETRY_COUNT);
+
+  return false;
+}
+
 #endif
 
 }

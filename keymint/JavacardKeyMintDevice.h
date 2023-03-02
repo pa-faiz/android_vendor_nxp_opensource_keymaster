@@ -34,12 +34,13 @@
 ******************************************************************************/
 #pragma once
 
-#include "CborConverter.h"
-#include "JavacardSecureElement.h"
 #include <aidl/android/hardware/security/keymint/BnKeyMintDevice.h>
 #include <aidl/android/hardware/security/keymint/BnKeyMintOperation.h>
 #include <aidl/android/hardware/security/keymint/HardwareAuthToken.h>
 #include <aidl/android/hardware/security/sharedsecret/SharedSecretParameters.h>
+
+#include "CborConverter.h"
+#include "JavacardSecureElement.h"
 
 namespace aidl::android::hardware::security::keymint {
 using namespace ::keymint::javacard;
@@ -49,15 +50,18 @@ using ndk::ScopedAStatus;
 using std::optional;
 using std::shared_ptr;
 using std::vector;
+using std::array;
 
 class JavacardKeyMintDevice : public BnKeyMintDevice {
   public:
     explicit JavacardKeyMintDevice(shared_ptr<JavacardSecureElement> card)
-        : securitylevel_(SecurityLevel::STRONGBOX), card_(card),
-          isEarlyBootEventPending(true) {
+        : securitylevel_(SecurityLevel::STRONGBOX), card_(card) {
         card_->initializeJavacard();
     }
     virtual ~JavacardKeyMintDevice() {}
+
+    // Methods from ::ndk::ICInterface follow.
+    binder_status_t dump(int fd, const char** args, uint32_t num_args) override;
 
     ScopedAStatus getHardwareInfo(KeyMintHardwareInfo* info) override;
 
@@ -131,12 +135,9 @@ class JavacardKeyMintDevice : public BnKeyMintDevice {
 
     ScopedAStatus defaultHwInfo(KeyMintHardwareInfo* info);
 
-    void handleSendEarlyBootEndedEvent();
-
     const SecurityLevel securitylevel_;
     const shared_ptr<JavacardSecureElement> card_;
     CborConverter cbor_;
-    bool isEarlyBootEventPending;
 };
 
 }  // namespace aidl::android::hardware::security::keymint

@@ -29,22 +29,24 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2021 NXP
+ ** Copyright 2020-2022 NXP
  **
  *********************************************************************************/
 #define LOG_TAG "javacard.strongbox-service"
 
-#include <android-base/logging.h>
+#include <aidl/android/hardware/security/keymint/SecurityLevel.h>
+
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
+#include <android-base/logging.h>
+#include <android-base/properties.h>
 
 #include "JavacardKeyMintDevice.h"
-#include <aidl/android/hardware/security/keymint/SecurityLevel.h>
 
 #include "JavacardSecureElement.h"
 #include "JavacardSharedSecret.h"
-#include "keymint_utils.h"
 #include "JavacardRemotelyProvisionedComponentDevice.h"
+#include "keymint_utils.h"
 #if defined OMAPI_TRANSPORT
 #include <OmapiTransport.h>
 #elif defined HAL_TO_HAL_TRANSPORT
