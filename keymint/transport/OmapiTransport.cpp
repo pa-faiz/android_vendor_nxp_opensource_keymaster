@@ -62,8 +62,7 @@ using android::base::StringPrintf;
 namespace keymint::javacard {
 
 std::string const ESE_READER_PREFIX = "eSE";
-constexpr const char omapiServiceName[] =
-        "android.se.omapi.ISecureElementService/default";
+constexpr const char omapiServiceName[] = "android.se.omapi.ISecureElementService/default";
 
 class SEListener : public ::aidl::android::se::omapi::BnSecureElementListener {};
 
@@ -83,7 +82,6 @@ void OmapiTransport::BinderDiedCallback(void *cookie) {
 #endif
 
 bool OmapiTransport::initialize() {
-
     LOG(DEBUG) << "Initialize the secure element connection";
 
     // Get OMAPI vendor stable service handler
@@ -119,7 +117,7 @@ bool OmapiTransport::initialize() {
     }
 
     // Get SE readers handlers
-    for (auto readerName : readers) {
+    for (auto & readerName : readers) {
         std::shared_ptr<::aidl::android::se::omapi::ISecureElementReader> reader;
         status = omapiSeService->getReader(readerName, &reader);
         if (!status.isOk()) {
@@ -162,7 +160,6 @@ bool OmapiTransport::internalTransmitApdu(
         std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
         std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse) {
     auto mSEListener = ndk::SharedRefBase::make<SEListener>();
-
     LOG(DEBUG) << "internalTransmitApdu: trasmitting data to secure element";
 
     if (reader == nullptr) {
@@ -208,10 +205,9 @@ bool OmapiTransport::internalTransmitApdu(
         return false;
     }
 
-    if ((selectResponse.size() < 2)
-        || ((selectResponse[selectResponse.size() -1] & 0xFF) != 0x00)
-        || ((selectResponse[selectResponse.size() -2] & 0xFF) != 0x90))
-    {
+    if ((selectResponse.size() < 2) ||
+        ((selectResponse[selectResponse.size() -1] & 0xFF) != 0x00) ||
+        ((selectResponse[selectResponse.size() -2] & 0xFF) != 0x90)) {
         LOG(ERROR) << "Failed to select the Applet.";
         return false;
     }
@@ -231,7 +227,6 @@ bool OmapiTransport::internalTransmitApdu(
 }
 
 bool OmapiTransport::openConnection() {
-
     // if already conection setup done, no need to initialise it again.
     if (isConnected()) {
         return true;
@@ -433,7 +428,7 @@ void OmapiTransport::prepareErrorRepsponse(std::vector<uint8_t>& resp){
 void OmapiTransport::closeChannel() {
   if (channel != nullptr)
     channel->close();
-    LOGD_OMAPI("Channel closed");
+  LOGD_OMAPI("Channel closed");
 }
 
 bool OmapiTransport::openChannelToApplet() {
@@ -462,5 +457,5 @@ bool OmapiTransport::openChannelToApplet() {
 
 #endif
 
-}
+}  // namespace keymint::javacard
 #endif // OMAPI_TRANSPORT
