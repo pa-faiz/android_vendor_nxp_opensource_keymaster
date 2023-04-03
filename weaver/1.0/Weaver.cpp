@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2020 NXP
+ *  Copyright 2020,2022 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 #define LOG_TAG "Weaver@1.0-service"
 
 #include "Weaver.h"
-#include <log/log.h>
-#include <string.h>
 #include <hidl/LegacySupport.h>
-#include <weaver_interface.h>
+#include <log/log.h>
+#include <memunreachable/memunreachable.h>
+#include <string.h>
 #include <weaver-impl.h>
-
+#include <weaver_interface.h>
 /* Mutex to synchronize multiple transceive */
 
 namespace android {
@@ -34,7 +34,7 @@ namespace implementation {
 
   WeaverInterface *pInterface = nullptr;
   Weaver::Weaver() {
-    ALOGI("INITILIZING WEAVER");
+    ALOGI("INITIALIZING WEAVER");
     pInterface = WeaverImpl::getInstance();
     if(pInterface != NULL) {
       pInterface->Init();
@@ -80,8 +80,11 @@ namespace implementation {
   Return<void>
     Weaver::read(uint32_t slotId, const hidl_vec<uint8_t>& key, read_cb _hidl_cb) {
       ALOGI("Read API ENTRY");
+      if (_hidl_cb == NULL) {
+        return Void();
+      }
       WeaverReadResponse readResp;
-      if(key == NULL || _hidl_cb == NULL || pInterface == NULL) {
+      if (key == NULL || pInterface == NULL) {
         _hidl_cb(WeaverReadStatus::FAILED, readResp);
       } else {
         ReadRespInfo readInfo;
@@ -117,6 +120,12 @@ namespace implementation {
     if(pInterface != NULL) {
       pInterface->DeInit();
     }
+  }
+  Return<void> Weaver::debug(const hidl_handle & /* fd */,
+                             const hidl_vec<hidl_string> & /* options */) {
+    ALOGI("\n Weaver HAL MemoryLeak Info =  %s \n",
+          ::android::GetUnreachableMemoryString(true, 10000).c_str());
+    return Void();
   }
 }
 }

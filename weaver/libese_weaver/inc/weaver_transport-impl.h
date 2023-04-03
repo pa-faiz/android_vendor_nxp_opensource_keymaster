@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2020 NXP
+ *  Copyright 2020, 2022 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 class WeaverTransportImpl : public WeaverTransport {
 public:
   /**
-   * \brief Function to initilize Weaver Transport Interface
+   * \brief Function to initialize Weaver Transport Interface
    *
    * \param[in]    aid -  applet id to be set to transport interface
    *
@@ -66,7 +66,7 @@ public:
   bool Send(std::vector<uint8_t> data, std::vector<uint8_t> &resp) override;
 
   /**
-   * \brief Function to de-initilize Weaver Transport Interface
+   * \brief Function to de-initialize Weaver Transport Interface
    *
    * \retval This function return true in case of success
    *         In case of failure returns false.
@@ -90,6 +90,8 @@ private:
   WeaverTransportImpl(const WeaverTransportImpl &) = delete;
   /* Private operator overload to make class singleton*/
   WeaverTransportImpl &operator=(const WeaverTransportImpl &) = delete;
+  /* Private api to detect if device boot completed or not*/
+  bool isDeviceBootCompleted();
 
   /* Private self instance for singleton purpose*/
   static WeaverTransportImpl *s_instance;
