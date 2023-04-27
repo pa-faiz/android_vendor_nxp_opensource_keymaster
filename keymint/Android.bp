@@ -144,9 +144,6 @@ cc_binary {
     srcs: [
         "service.cpp",
     ],
-    required: [
-        "RemoteProvisioner",
-    ],
 }
 
 prebuilt_etc {
