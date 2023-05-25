@@ -2,3 +2,4 @@ service vendor.keymint-strongbox /vendor/bin/hw/android.hardware.security.keymin
     class early_hal
     user vendor_nxp_strongbox
     group vendor_nxp_strongbox
+    capabilities WAKE_ALARM
