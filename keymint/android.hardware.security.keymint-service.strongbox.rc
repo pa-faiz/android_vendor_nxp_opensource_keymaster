@@ -7,3 +7,9 @@ service vendor.keymint-strongbox /vendor/bin/hw/android.hardware.security.keymin
     class early_hal
     user vendor_nxp_strongbox
     group vendor_nxp_strongbox
+
+on property:vendor.keymint.quickboot=true
+   stop vendor.keymint-strongbox
+   start vendor.keymint-strongbox
+   stop keystore2
+   start keystore2
