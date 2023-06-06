@@ -1,5 +1,5 @@
 # Build Keymaster open source vendor modules
-ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox
+ESE_VENDOR_KEYMINT += android.hardware.security.keymint-service.strongbox-nxp
 ESE_VENDOR_KEYMINT += android.hardware.authsecret-service.nxp
 
 ifeq ($(strip $(ENABLE_ESE_KEYMINT_SPLIT_MANIFEST)),true)
