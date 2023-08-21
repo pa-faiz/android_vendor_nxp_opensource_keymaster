@@ -3,7 +3,7 @@
 # Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause-Clear
 
-service vendor.keymint-strongbox /vendor/bin/hw/android.hardware.security.keymint-service.strongbox
+service vendor.keymint-strongbox /vendor/bin/hw/android.hardware.security.keymint-service.strongbox-nxp
     class early_hal
     user vendor_nxp_strongbox
     group vendor_nxp_strongbox

@@ -5,7 +5,7 @@ value:2901
 value:2902
 
 
-[vendor/bin/hw/android.hardware.security.keymint-service.strongbox]
+[vendor/bin/hw/android.hardware.security.keymint-service.strongbox-nxp]
 mode: 0755
 user: AID_VENDOR_NXP_STRONGBOX
 group: AID_SYSTEM
