@@ -1,4 +1,9 @@
-service weaver_hal_service /vendor/bin/hw/android.hardware.weaver@1.0-service
+# Changes from Qualcomm Innovation Center are provided under the following license:
+#
+# Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+service vendor.weaver_hal_service /vendor/bin/hw/android.hardware.weaver@1.0-service
     class hal
-    user  vendor_nxp_weaver
-    group system drmrpc
+    user vendor_nxp_weaver
+    group vendor_nxp_weaver

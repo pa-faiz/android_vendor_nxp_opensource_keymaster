@@ -34,18 +34,19 @@
  **
  ** Copyright 2020-2021 NXP
  *************************************************************************/
+/****************************************************************************
+ **
+ ** Changes from Qualcomm Innovation Center are provided under the following license:
+ ** Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ ** SPDX-License-Identifier: BSD-3-Clause-Clear
+ *************************************************************************/
 
 #include <android-base/logging.h>
 #include <android/hardware/keymaster/4.1/IKeymasterDevice.h>
 #include <hidl/HidlTransportSupport.h>
 #include <JavacardKeymaster4Device.h>
-#include "PlatformUtils.h"
 
 int main() {
-    if (!isServiceRegistrationAllowed()) {
-        LOG(ERROR) << "Javacard service registration is not allowed";
-        return 0;
-    }
 
     ::android::hardware::configureRpcThreadpool(1, true);
     auto keymaster = new ::keymaster::V4_1::javacard::JavacardKeymaster4Device();
