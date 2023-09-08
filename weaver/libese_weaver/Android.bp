@@ -23,7 +23,7 @@ cc_library_shared {
     shared_libs: [
         "android.se.omapi-V1-ndk",
         "libcutils",
-        "libjc_keymint_transport",
+        "libjc_keymint_transport_nxp",
         "libhardware",
         "libhidlbase",
         "libutils",

@@ -31,7 +31,7 @@
  //
 
 cc_library {
-    name: "libjc_keymint",
+    name: "libjc_keymint_nxp",
     defaults: [
         "keymaster_defaults",
         "keymint_use_latest_hal_aidl_ndk_shared",
@@ -62,7 +62,7 @@ cc_library {
         "liblog",
         "libcrypto",
         "libcutils",
-        "libjc_keymint_transport",
+        "libjc_keymint_transport_nxp",
         "libbinder_ndk",
     ],
     export_include_dirs: [
@@ -77,7 +77,7 @@ cc_library {
 }
 
 cc_library {
-    name: "libjc_keymint_transport",
+    name: "libjc_keymint_transport_nxp",
     defaults: [
         "keymint_use_latest_hal_aidl_ndk_shared",
     ],
@@ -114,7 +114,7 @@ cc_library {
 }
 
 cc_binary {
-    name: "android.hardware.security.keymint-service.strongbox",
+    name: "android.hardware.security.keymint-service.strongbox-nxp",
     defaults: [
         "keymint_use_latest_hal_aidl_ndk_shared",
     ],
@@ -135,8 +135,8 @@ cc_binary {
         "libcppbor_external",
         "libcrypto",
         "libkeymaster_portable",
-        "libjc_keymint",
-        "libjc_keymint_transport",
+        "libjc_keymint_nxp",
+        "libjc_keymint_transport_nxp",
         "liblog",
         "libutils",
         "libhidlbase",
