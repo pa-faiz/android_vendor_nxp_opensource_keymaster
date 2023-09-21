@@ -13,17 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/******************************************************************************
+ **
+ ** The original Work has been changed by NXP.
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+ ** You may obtain a copy of the License at
+ **
+ ** http://www.apache.org/licenses/LICENSE-2.0
+ **
+ ** Unless required by applicable law or agreed to in writing, software
+ ** distributed under the License is distributed on an "AS IS" BASIS,
+ ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ** See the License for the specific language governing permissions and
+ ** limitations under the License.
+ **
+ ** Copyright 2022-2023 NXP
+ **
+ *********************************************************************************/
 #define LOG_TAG "javacard.strongbox.keymint.operation-impl"
 
 #include "JavacardKeyMintOperation.h"
+#include "CborConverter.h"
 #include <JavacardKeyMintUtils.h>
 #include <aidl/android/hardware/security/keymint/ErrorCode.h>
 #include <aidl/android/hardware/security/secureclock/ISecureClock.h>
 #include <android-base/logging.h>
 
 namespace aidl::android::hardware::security::keymint {
-using namespace ::keymint::javacard;
+using cppbor::Bstr;
+using cppbor::Uint;
 using secureclock::TimeStampToken;
 
 JavacardKeyMintOperation::~JavacardKeyMintOperation() {
@@ -82,15 +102,21 @@ ScopedAStatus JavacardKeyMintOperation::finish(
     const vector<uint8_t> inData = input.value_or(vector<uint8_t>());
     DataView view = {.buffer = {}, .data = inData, .start = 0, .length = inData.size()};
     const vector<uint8_t> sign = signature.value_or(vector<uint8_t>());
-    appendBufferedData(view);
     if (!(bufferingMode_ == BufferingMode::EC_NO_DIGEST ||
           bufferingMode_ == BufferingMode::RSA_NO_DIGEST)) {
+        appendBufferedData(view);
         if (view.length > MAX_CHUNK_SIZE) {
             auto err = updateInChunks(view, aToken, tToken, output);
             if (err != KM_ERROR_OK) {
                 return km_utils::kmError2ScopedAStatus(err);
             }
         }
+    } else {
+        keymaster_error_t err = bufferData(view);
+        if (err != KM_ERROR_OK) {
+            return km_utils::kmError2ScopedAStatus(err);
+        }
+        appendBufferedData(view);
     }
     vector<uint8_t> remaining = popNextChunk(view, view.length);
     return km_utils::kmError2ScopedAStatus(sendFinish(remaining, sign, aToken, tToken, confToken, *output));
@@ -283,6 +309,9 @@ keymaster_error_t JavacardKeyMintOperation::sendFinish(const vector<uint8_t>& da
     }
     opHandle_ = 0;
     output.insert(output.end(), respData.begin(), respData.end());
+#ifdef NXP_EXTNS
+    LOG(INFO) << "(finish) completed Succesfully";
+#endif
     return KM_ERROR_OK;
 }
 
