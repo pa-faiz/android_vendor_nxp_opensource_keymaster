@@ -92,8 +92,11 @@ public:
      * broken.
      */
     bool isConnected() override;
-    void closeSession();
-private:
+#ifdef NXP_EXTNS
+    void closeChannel();
+#endif
+
+  private:
     //AppletConnection mAppletConnection;
     SBAccessController mSBAccessController;
     IntervalTimer mTimer;
@@ -107,7 +110,10 @@ private:
     std::string const ESE_READER_PREFIX = "eSE";
     constexpr static const char omapiServiceName[] =
             "android.se.omapi.ISecureElementService/default";
-
+#ifdef NXP_EXTNS
+    /* Applet ID Weaver */
+    const std::vector<uint8_t> kWeaverAID = {0xA0, 0x00, 0x00, 0x03, 0x96, 0x10, 0x10};
+#endif
     bool initialize();
     bool internalTransmitApdu(
             std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
@@ -121,6 +127,7 @@ private:
             std::shared_ptr<aidl::android::se::omapi::ISecureElementReader> reader,
             std::vector<uint8_t> apdu, std::vector<uint8_t>& transmitResponse);
     void prepareErrorRepsponse(std::vector<uint8_t>& resp);
+    bool openChannelToApplet();
 #endif
 #ifdef INTERVAL_TIMER
     inline uint16_t getApduStatus(std::vector<uint8_t> &inputData) {
