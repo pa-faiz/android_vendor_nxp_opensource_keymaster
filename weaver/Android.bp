@@ -17,7 +17,7 @@
 // *************************************************************************
 
 cc_binary {
-    name: "android.hardware.weaver-service.nxp",
+    name: "android.hardware.weaver-service.nxp-qti",
     relative_install_path: "hw",
     init_rc: ["aidl_impl/android.hardware.weaver-service.nxp.rc"],
     vintf_fragments: ["aidl_impl/android.hardware.weaver-service.nxp.xml"],
