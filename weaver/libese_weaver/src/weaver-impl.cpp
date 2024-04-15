@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2020, 2022 NXP
+ *  Copyright 2020, 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -58,10 +58,10 @@ Status_Weaver WeaverImpl::Init() {
   mParser = WeaverParserImpl::getInstance();
   RETURN_IF_NULL(mTransport, WEAVER_STATUS_FAILED, "Transport is NULL");
   RETURN_IF_NULL(mParser, WEAVER_STATUS_FAILED, "Parser is NULL");
-  std::vector<uint8_t> aid;
+  std::vector<std::vector<uint8_t>> aid;
   mParser->getAppletId(aid);
-  if (!mTransport->Init(aid)) {
-    LOG_E(TAG, "Not able to Initilaize Transport Interface");
+  if (!mTransport->Init(std::move(aid))) {
+    LOG_E(TAG, "Not able to Initialize Transport Interface");
     LOG_D(TAG, "Exit : FAILED");
     return WEAVER_STATUS_FAILED;
   }
@@ -98,7 +98,7 @@ Status_Weaver WeaverImpl::GetSlots(SlotInfo &slotInfo) {
   }
 #endif
   if (status == WEAVER_STATUS_OK) {
-    status = mParser->ParseSlotInfo(resp, slotInfo);
+    status = mParser->ParseSlotInfo(std::move(resp), slotInfo);
     LOG_D(TAG, "Total Slots (%u) ", slotInfo.slots);
   } else {
     LOG_E(TAG, "Failed Parsing getSlot Response");
@@ -146,15 +146,19 @@ Status_Weaver WeaverImpl::Read(uint32_t slotId, const std::vector<uint8_t> &key,
   }
   if (status == WEAVER_STATUS_OK) {
     status = mParser->ParseReadInfo(resp, readRespInfo);
-    if (status == WEAVER_STATUS_THROTTLE) {
+    if (status == WEAVER_STATUS_THROTTLE ||
+        status == WEAVER_STATUS_INCORRECT_KEY) {
       cmd.clear();
       resp.clear();
       if (mParser->FrameGetDataCmd(WeaverParserImpl::sThrottleGetDataP1, (uint8_t)slotId, cmd) &&
           (mTransport->Send(cmd, resp))) {
         GetDataRespInfo getDataInfo;
-        if (mParser->ParseGetDataInfo(resp, getDataInfo) == WEAVER_STATUS_OK) {
-          /* convert timeout from getDataInfo sec to millisec assign same to read response */
+        if (mParser->ParseGetDataInfo(std::move(resp), getDataInfo) == WEAVER_STATUS_OK) {
+          /* convert timeout from getDataInfo sec to millisecond assign same to read response */
           readRespInfo.timeout = (getDataInfo.timeout * 1000);
+          if (getDataInfo.timeout > 0) {
+            status = WEAVER_STATUS_THROTTLE;
+          }
         }
       }
     }
@@ -203,7 +207,7 @@ Status_Weaver WeaverImpl::Write(uint32_t slotId,
     // Channel Close Failed
   }
 #endif
-  if (status != WEAVER_STATUS_OK || (!mParser->isSuccess(resp))) {
+  if (status != WEAVER_STATUS_OK || (!mParser->isSuccess(std::move(resp)))) {
     status = WEAVER_STATUS_FAILED;
   }
   LOG_D(TAG, "Exit");
