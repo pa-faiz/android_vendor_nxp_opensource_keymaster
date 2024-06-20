@@ -15,7 +15,7 @@
 //
 
 cc_binary {
-    name: "android.hardware.authsecret-service.nxp",
+    name: "android.hardware.authsecret-service.nxp-qti",
     relative_install_path: "hw",
     init_rc: ["android.hardware.authsecret-service.nxp.rc"],
     vintf_fragments: ["android.hardware.authsecret-service.nxp.xml"],
