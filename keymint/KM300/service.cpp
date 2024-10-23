@@ -29,7 +29,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **
- ** Copyright 2020-2023 NXP
+ ** Copyright 2020-2024 NXP
  **
  *********************************************************************************/
 #define LOG_TAG "javacard.strongbox-service"
@@ -65,6 +65,7 @@ using keymint::javacard::JavacardSecureElement;
 #if defined OMAPI_TRANSPORT
 using keymint::javacard::OmapiTransport;
 #elif defined HAL_TO_HAL_TRANSPORT
+using keymint::javacard::HalToHalTransport;
 #else
 using keymint::javacard::SocketTransport;
 #endif
