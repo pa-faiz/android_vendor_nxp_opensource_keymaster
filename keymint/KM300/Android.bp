@@ -81,10 +81,10 @@ cc_library {
 cc_binary {
     name: "android.hardware.security.keymint-service.strongbox-nxp",
     relative_install_path: "hw",
-    init_rc: ["android.hardware.security.keymint-service.strongbox.nxp.rc"],
+    init_rc: ["android.hardware.security.keymint-service.strongbox-nxp.rc"],
     vintf_fragments: [
-        "android.hardware.security.keymint-service.strongbox.xml",
-        "android.hardware.security.sharedsecret-service.strongbox.xml",
+        "android.hardware.security.keymint-service.strongbox-nxp.xml",
+        "android.hardware.security.sharedsecret-service.strongbox-nxp.xml",
     ],
     vendor: true,
     cflags: [

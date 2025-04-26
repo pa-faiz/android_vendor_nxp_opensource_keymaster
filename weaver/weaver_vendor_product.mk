@@ -1,7 +1,7 @@
 # Build Keymaster open source vendor modules
 
 ifeq ($(strip $(ENABLE_ESE_WEAVER_SPLIT_MANIFEST)),true)
-ESE_VENDOR_WEAVER += android.hardware.weaver-service.nxp.xml
+ESE_VENDOR_WEAVER += android.hardware.weaver-service-nxp.xml
 endif
 
 ifeq ($(strip $(TARGET_USES_ESE_WEAVER)),true)
