@@ -122,10 +122,3 @@ prebuilt_etc {
     relative_install_path: "vintf/manifest",
     vendor: true,
 }
-
-sh_binary {
-    name: "init.qti.ese.strongbox.sh",
-    src: "init.qti.ese.strongbox.sh",
-    vendor: true,
-    owner: "qti",
-}
